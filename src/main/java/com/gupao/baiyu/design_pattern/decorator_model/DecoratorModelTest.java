@@ -1,4 +1,4 @@
-package main.java.com.gupao.baiyu.design_pattern.decorator_model;
+package com.gupao.baiyu.design_pattern.decorator_model;
 
 /**
  * 装饰者模式
