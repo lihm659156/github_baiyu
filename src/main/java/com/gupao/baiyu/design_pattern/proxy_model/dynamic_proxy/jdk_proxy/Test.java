@@ -1,5 +1,8 @@
 package com.gupao.baiyu.design_pattern.proxy_model.dynamic_proxy.jdk_proxy;
 
+import sun.misc.ProxyGenerator;
+
+import java.io.FileOutputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -36,7 +39,20 @@ public class Test {
 
         obj.eat();
 
-        obj.water();
+        System.out.println(obj.getClass());
+
+        // $Proxy0是运行时生成的class文件，我们是无法找到这个class文件
+        // 从JVM中取出class文件流，并且输出到硬盘上，方便查看
+        byte[] bytes = ProxyGenerator.generateProxyClass("$Proxy0",new Class<?>[]{Food.class});
+        try{
+            FileOutputStream out = new FileOutputStream("E://$Proxy0.class");
+            out.write(bytes);
+            out.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+
+
 
     }
 
