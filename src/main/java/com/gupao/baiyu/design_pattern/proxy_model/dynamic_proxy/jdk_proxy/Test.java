@@ -13,6 +13,8 @@ public class Test {
         // 调用代理方法
         obj.eat();
 
+        obj.water();
+
     }
 
 }

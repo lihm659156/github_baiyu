@@ -9,12 +9,12 @@ import java.lang.reflect.Proxy;
  */
 public class Delivery implements InvocationHandler{
 
-    private Person person;
+    private Food food;
 
-    public Object getInstance(Person person){
-        this.person = person;
+    public Object getInstance(Food food){
+        this.food = food;
 
-        Class<?> clazz = person.getClass();
+        Class<?> clazz = food.getClass();
 
         for(Class claxx : clazz.getInterfaces()){
             System.out.println(claxx);
@@ -29,7 +29,7 @@ public class Delivery implements InvocationHandler{
     // 代理方法
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         System.out.println("送餐员，送餐到家");
-        method.invoke(person, args);
+        method.invoke(food, args);
         System.out.println("送餐员离开了");
         return null;
     }
