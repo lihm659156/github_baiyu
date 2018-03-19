@@ -8,11 +8,11 @@ import java.io.FileInputStream;
 /**
  * 自定义类加载器
  */
-public abstract class MyClassLoader extends ClassLoader {
+public class MyClassLoader extends ClassLoader {
 
     private File classPathFile;
 
-    public MyClassLoader(File classFile){
+    public MyClassLoader(){
         String classPath  = MyClassLoader.class.getResource("").getPath();
         this.classPathFile = new File(classPath);
     }

@@ -5,6 +5,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.File;
 import java.io.FileWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
@@ -36,7 +37,7 @@ public class MyProxy {
 
             String path = MyProxy.class.getResource("").getPath();
             String filePath = path + "$Proxy0.java";
-            System.out.println(filePath);
+//            System.out.println(filePath);
             File file = new File(filePath);
             FileWriter writer = new FileWriter(file);
             writer.write(src);
@@ -52,10 +53,14 @@ public class MyProxy {
             task.call();
             manager.close();
 
-
             // 4.将class文件加载到JVM
+            Class clazz = loader.findClass("$Proxy0");
+            Constructor constructor = clazz.getConstructor(MyInvocationHandler.class);
+            Object obj = constructor.newInstance(h);
 
             // 5.返回字节码重组后的新的代理对象
+
+            return obj;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -64,6 +69,11 @@ public class MyProxy {
         return null;
     }
 
+    /**
+     * 动态生成java代码
+     * @param anInterface
+     * @return
+     */
     private static String generateSrc(Class<?> anInterface) {
         StringBuffer sb = new StringBuffer();
 
@@ -102,11 +112,22 @@ public class MyProxy {
     }
 
     public static void main(String[] args) {
-        newProxyInstance(null, Person.class.getInterfaces(), new MyInvocationHandler() {
+
+        Person person = new Person();
+
+        Object obj = MyProxy.newProxyInstance(new MyClassLoader(), Person.class.getInterfaces(), new MyInvocationHandler() {
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                System.out.println("送餐员送餐到家！");
+                method.invoke(person, args);
+                System.out.println("送餐员离开！");
                 return null;
             }
         });
+
+        Food food = (Food) obj;
+
+        food.eat();
+
     }
 
 }
