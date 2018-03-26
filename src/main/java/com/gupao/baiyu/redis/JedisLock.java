@@ -8,6 +8,9 @@ import java.util.UUID;
 
 public class JedisLock {
 
+    // 保证set和过期时间的原子性
+    // jedis.set("key111","value111","NX","PX", 100000);
+
     /**
      * 获得lock
      * @param key
