@@ -10,6 +10,17 @@ public class JedisLock {
 
     // 保证set和过期时间的原子性
     // jedis.set("key111","value111","NX","PX", 100000);
+    // 保证setnx和expire命令原子执行
+    public static long setnxtime(Jedis jedis, String key, String value, String timeout){
+        String lua = "local key = KEYS[1];\n" +
+                "local value = KEYS[2];\n" +
+                "local time = KEYS[3];\n" +
+                "local result = redis.call(\"setnx\", key, value);\n" +
+                "local result2 = redis.call(\"expire\", key, time);\n" +
+                "return result;";
+        Object obj = jedis.eval(lua , 3, key, value, timeout);
+        return (Long)obj;
+    }
 
     /**
      * 获得lock
@@ -26,19 +37,9 @@ public class JedisLock {
             long endTime = System.currentTimeMillis() + timeout;
             // 是否超时
             while ((endTime - System.currentTimeMillis()) > 0){
-                if(jedis.setnx(key,value) == 1){
-                    // 设置超时时间
-                    jedis.expire(key,Long.valueOf(timeout).intValue());
+                if(JedisLock.setnxtime(jedis, key, value, String.valueOf(timeout)) > 0){
                     System.out.println(Thread.currentThread().getId() + " 获得锁成功...");
-                    //成功
                     return value;
-                }
-                //如果上面设置锁的超时时间没有成功，补偿
-                if(jedis.exists(key)){
-                    if(jedis.ttl(key) == -1){
-                        // 补偿超时时间
-                        jedis.expire(key,Long.valueOf(timeout).intValue());
-                    }
                 }
                 // 每一秒钟重试一次
                 Thread.sleep(1000);
@@ -98,8 +99,9 @@ public class JedisLock {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                } finally {
+                    JedisLock.relaseLock(key,val);
                 }
-                JedisLock.relaseLock(key,val);
             }
         });
 
@@ -112,8 +114,9 @@ public class JedisLock {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                } finally {
+                    JedisLock.relaseLock(key,val);
                 }
-                JedisLock.relaseLock(key,val);
             }
         });
 
