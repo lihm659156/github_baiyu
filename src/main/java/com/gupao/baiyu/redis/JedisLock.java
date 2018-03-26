@@ -37,7 +37,9 @@ public class JedisLock {
             long endTime = System.currentTimeMillis() + timeout;
             // 是否超时
             while ((endTime - System.currentTimeMillis()) > 0){
-                if(JedisLock.setnxtime(jedis, key, value, String.valueOf(timeout)) > 0){
+                long num = JedisLock.setnxtime(jedis, key, value, String.valueOf(timeout));
+//                System.out.println(Thread.currentThread().getId() + " num: " + num);
+                if(num > 0){
                     System.out.println(Thread.currentThread().getId() + " 获得锁成功...");
                     return value;
                 }
@@ -70,14 +72,13 @@ public class JedisLock {
                     // 删除key
                     transaction.del(key);
                     List<Object> list = transaction.exec();
-                    if(list == null){
+                    if(list == null || list.size() == 0){
                         continue;
                     }
                     System.out.println(Thread.currentThread().getId() +" 释放锁成功...");
                     return true;
                 }
                 jedis.unwatch();
-                Thread.sleep(1000);
                 System.out.println(Thread.currentThread().getId() +" 释放锁中...");
             }
         }catch(Exception ex){
@@ -88,49 +89,27 @@ public class JedisLock {
 
     public static void main(String[] args) {
         String key = "lock:business:order";
-        long timeout = 5000;
+        long timeout = 50000;
 
-        Thread t1 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String val = JedisLock.getLock(key,timeout);
-                try {
-                    System.out.println("执行业务1");
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    JedisLock.relaseLock(key,val);
+        for(int i=0;i<10;i++){
+            Thread t1 = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String val = JedisLock.getLock(key,timeout);
+                    if(val != null){
+                        try {
+                            System.out.println("执行业务" + Thread.currentThread().getId());
+                            Thread.sleep(2000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        } finally {
+                            JedisLock.relaseLock(key,val);
+                        }
+                    }
                 }
-            }
-        });
-
-        Thread t2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                String val = JedisLock.getLock(key,timeout);
-                try {
-                    System.out.println("执行业务2");
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    JedisLock.relaseLock(key,val);
-                }
-            }
-        });
-
-        t1.start();
-        t2.start();
-
-
-//        String val = JedisLock.getLock(key,timeout);
-//        try {
-//            Thread.sleep(10000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        JedisLock.relaseLock(key,val);
+            });
+            t1.start();
+        }
 
     }
 
