@@ -2,9 +2,44 @@ package com.gupao.baiyu.redis;
 
 import redis.clients.jedis.Jedis;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Test {
 
     public static void main(String[] args) {
+        String lua = "local num = redis.call('incr', KEYS[1]);\n" +
+                "if tonumber(num) == 1 then\n" +
+                "  redis.call('expire',KEYS[1],ARGV[1]);\n" +
+                "  return 1;\n" +
+                "elseif tonumber(num) > tonumber(ARGV[2]) then\n" +
+                "  return 0;\n" +
+                "else\n" +
+                "  return 1;\n" +
+                "end";
+        try{
+            Jedis jedis = RedisManager.getJedis();
+
+            String val = jedis.scriptLoad(lua);
+
+            System.out.println(val);
+
+            List<String> keyList = new ArrayList<String>();
+            keyList.add("phone:limit:192.168.1.1");
+
+            List<String> argvList = new ArrayList<String>();
+            argvList.add("60000");
+            argvList.add("3");
+
+            Object obj = jedis.evalsha("cc369a70dccaacd38cc22611daaf9bbcad19e032",keyList, argvList);
+
+            System.out.println(obj);
+
+            jedis.close();
+        }catch(Exception ex){
+            ex.printStackTrace();
+        }
+
 //        try{
 //            Jedis jedis = RedisManager.getJedis();
 //            String res1 = jedis.set("key111","value111","NX","PX", 100000);
@@ -15,10 +50,10 @@ public class Test {
 //        }catch (Exception ex){
 //            ex.printStackTrace();
 //        }
-        Object obj = setnxtime("ky111","val212","100000");
-        System.out.println(obj);
-        Object obj2 = setnxtime("ky111","val212","100000");
-        System.out.println(obj2);
+//        Object obj = setnxtime("ky111","val212","100000");
+//        System.out.println(obj);
+//        Object obj2 = setnxtime("ky111","val212","100000");
+//        System.out.println(obj2);
     }
 
     public static Object setnxtime(String key, String value, String timeout){
